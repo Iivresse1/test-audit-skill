@@ -28,49 +28,32 @@ Read `GLOSSARY.md` and `docs/test-audit-skill-design.md` first. Use the ADRs onl
 
 The user has accepted the documentation split and context-loading strategy: `README.md` is for human readers, `SKILL.md` contains the compact agent workflow and routing rules, and normative material under `references/` is loaded only when relevant. The intended division is designed both for agent comprehension and lower context-token use.
 
+Later confirmations, which supersede the earlier Q14-Q17 draft proposals:
+
+- Findings use six action-oriented top-level categories: Missing Evidence, Weak Evidence, Untrustworthy Oracle, Unfaithful Environment, Unexecuted Test, Undetermined. Finer mechanisms survive only as secondary `mechanism` labels.
+- Severity and Confidence are independent 1-5 scores displayed as `S5/C2`. Low confidence never lowers severity; severity at least 4 with confidence at most 2 is flagged for human confirmation and ranked first.
+- Contract modeling and Audit Obligation derivation are a single step.
+- Static review requires only three fields per test: Test Layer, Oracle Provenance, Executed?.
+- The report uses six sections and `AUD-001` identifiers; Gap Disclosure uses three prefixes: Unaudited, Unverified, Not dynamically confirmed.
+- Scoped, Risk-First, and Exhaustive completion criteria plus anomalous test handling are confirmed in the design document.
+- No surface-discovery checklist and no framework reference packs are shipped. Version uncertainty lowers confidence only where a conclusion depends on the affected Technology Contract.
+- The seven-step skeleton is frozen: intake, Test Inventory, contract and obligation modeling, static review, optional dynamic confirmation, adjudication and reporting, completion.
+- The skill is named `test-auditor` and is **user-invoked only** (`disable-model-invocation: true`); it never activates on its own. The user runs it as `/test-auditor`, passing the audit target and optional mode as the argument (frontmatter `argument-hint`).
+- Description: "Audit the existing test suite to assess coverage adequacy and test trustworthiness. Provide evidence-backed findings and state them briefly; never generate or repair tests."
+- Severity anchors: 5 irreversible loss; 4 silent core-path failure; 3 local recoverable error; 2 maintainability damage; 1 informational; `Unrated` with the gap stated. Confidence anchors: 5 closed evidence or isolated red proof; 4 one refutable assumption; 3 unverified assumption; 2 indirect or non-reproducible; 1 inference only.
+- One primary Mechanism Label per finding, chosen by root-cause proximity (Execution Integrity, Environment Fidelity, Oracle provenance, Observation, Implementation Coupling, Coverage). Secondary causes are listed in Evidence and never omitted; indistinguishable cases use `unclassified`.
+
 The workspace artifacts listed above are currently untracked. Preserve them. Preserve all unrelated files, especially anything credential-like; do not inspect such files.
 
-## Open Design Round
+## Design Frontier Closed
 
-Resume by asking the user to accept, reject, or revise these four proposals. Keep the questions concrete and allow the user to challenge the categories.
+No open design questions remain. `GLOSSARY.md` and `docs/test-audit-skill-design.md` record the confirmed decisions, including the report contract, scoring anchors, completion criteria, and anomalous test handling.
 
-### Q14 - Finding Taxonomy
+## Next Step
 
-Proposed families and categories:
+The skill skeleton is built at `test-auditor/` on the `main` branch: `SKILL.md`, `README.md`, and `references/` with `evidence-model.md`, `report-contract.md`, `scoring.md`, and `modes.md`. Structure, frontmatter, and cross-references are validated.
 
-- Coverage: `Coverage Gap`
-- Trustworthiness: `Scenario Construction Defect`, `Oracle Defect`, `Observation Defect`, `Environment Fidelity Defect`, `Isolation/Determinism Defect`, `Execution Integrity Defect`, `Implementation Coupling`
-- Audit limitations: `Missing Contract`, `Contract Conflict`, `Unsupported/Unknown Surface`, `Unexecutable Test`
-
-Unknown cases should initially be reported as `Unclassified Finding`; a running Skill must not edit its own taxonomy.
-
-### Q15 - Confidence and Severity
-
-Proposed confidence levels: `Confirmed`, `Supported`, `Suspected`.
-
-Severity should be determined from the consequence of the affected risk scenario, not mechanically from the defect category. The actual severity scale and its definitions are still undecided.
-
-### Q16 - Invocation Policy
-
-Proposed behavior: model-invoked for requests about test-suite audit, coverage adequacy, test trustworthiness, test correctness, or tautological/circular tests. It must not activate for ordinary test generation.
-
-### Q17 - Framework References
-
-Proposed v1 behavior: do not bundle framework-specific reference packs for FastAPI, Docker, Electron, databases, and similar integration surfaces. Detect relevant surfaces, identify actual versions/configuration, and consult official version-matched documentation on demand. Package an adapter only after repeated audits reveal stable, non-obvious reusable rules.
-
-## After Q14-Q17
-
-Immediately update `GLOSSARY.md` and `docs/test-audit-skill-design.md` with each confirmed decision. Add an ADR only for a consequential, hard-to-reverse trade-off; do not create ADRs for routine detail.
-
-The next grilling round should settle:
-
-- severity levels and escalation rules;
-- the audit report schema;
-- completion criteria for `Scoped`, `Risk-First`, and `Exhaustive` modes;
-- how undiscovered, unparsed, skipped, and unexecutable tests affect conclusions;
-- the final Skill name, description, and trigger boundaries.
-
-When the design frontier is empty and the user explicitly confirms it, use the Skill creation workflow to build and validate the actual Skill structure.
+Next: run a trial audit on a real repository, then install to the user skills directory if approved. Keep this handoff current.
 
 ## Working Style
 
