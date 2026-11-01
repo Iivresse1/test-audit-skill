@@ -96,3 +96,23 @@ _Avoid_: Test failure
 A supported test-audit finding that does not yet justify changing the stable finding taxonomy.
 _Avoid_: New category
 
+**Finding Category**:
+The top-level classification of an audit finding, chosen by the action it requires: missing evidence, weak evidence, untrustworthy oracle, unfaithful environment, unexecuted test, or undetermined.
+_Avoid_: Finding type, defect class
+
+**Mechanism Label**:
+A secondary descriptor that names the specific mechanism behind a finding without changing its Finding Category or aggregate counts.
+_Avoid_: Subcategory
+
+**Severity Score**:
+A 1-5 rating of the consequence of the Risk Scenario affected by a finding, independent of how well that finding is evidenced.
+_Avoid_: Priority, impact score
+
+**Confidence Score**:
+A 1-5 rating of the evidential support for a finding, independent of the consequence at stake.
+_Avoid_: Certainty, likelihood
+
+**Finding Identifier**:
+The `AUD-` prefixed number that names a finding within one audit, unique and never reused.
+_Avoid_: F1-style or M1-style shorthand
+
