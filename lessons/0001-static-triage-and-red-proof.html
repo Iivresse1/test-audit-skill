@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>静态初筛与 Red Proof</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+<main>
+  <h1>Q4：静态初筛与 Red Proof</h1>
+  <p class="lede">目标：理解代码审查能提出什么怀疑，以及一次有针对性的失败实验能增加什么证据。</p>
+
+  <div class="key">
+    <strong>一句话：</strong>静态审计分析预言机的来源；动态验证检查测试能否识别某一类真实错误。两者都不能单独证明测试套件“完整”。
+  </div>
+
+  <h2>先修正一个容易混淆的例子</h2>
+  <pre><code>// A: 具体需求示例
+expect(add(2, 3)).toBe(5);
+
+// B: 镜像公式
+expect(add(2, 3)).toBe(2 + 3);
+
+// C: 真正的数据循环
+const expected = add(2, 3);
+expect(add(2, 3)).toBe(expected);</code></pre>
+
+  <p>A 的预言机最清楚。B 与实现可能共享“加法”这一解释，因此有相关性风险，但它仍会在生产代码把 <code>+</code> 改为 <code>-</code> 时失败。C 的 expected 来自被测函数本身，除非函数不确定或有副作用，否则它几乎只是在证明同一次计算等于自己。</p>
+
+  <p>所以，“测试里出现了同样的公式”不等于“测试必然同义反复”。审计器需要追踪 expected 的来源，并说明该来源和实现共享了什么假设。</p>
+
+  <h2>静态审计能做什么</h2>
+  <ol>
+    <li>追踪 actual 与 expected 的数据来源。</li>
+    <li>识别生产 helper、共享 fixture、mock 配置和复制算法。</li>
+    <li>比较断言与规格：它验证结果、持久化状态、副作用，还是只验证调用发生。</li>
+    <li>提出一个具体假设：“如果这里把边界条件改错，这个测试可能仍然通过。”</li>
+  </ol>
+
+  <p>静态结果应写成“疑似问题 + 共享依赖 + 可能漏掉的错误”，而不是只给一个标签。测试预言机本身就是软件测试中的独立难题；规格、契约、模型、变形关系和人工判断都可能成为预言机来源。<sup><a href="#source-1">1</a></sup></p>
+
+  <h2>Red Proof 是什么</h2>
+  <p>Red proof 是一个小型反事实实验：暂时引入一个与需求相关的错误，然后运行目标测试，看它会不会变红。Mutation testing 将被测试捕获的变异称为 killed，将所有测试仍通过的变异称为 survived。<sup><a href="#source-2">2</a></sup></p>
+
+  <pre><code>// 原实现
+return a + b;
+
+// 定向变异：模拟错误运算符
+return a - b;</code></pre>
+
+  <table>
+    <thead>
+      <tr><th>结果</th><th>可以说明</th><th>不能说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>测试失败</td><td>该测试能识别这个具体错误模型</td><td>不能证明它覆盖所有需求或错误</td></tr>
+      <tr><td>测试仍通过</td><td>该错误没有被当前测试观察到</td><td>不能自动证明测试同义反复</td></tr>
+    </tbody>
+  </table>
+
+  <p class="warning">为什么 survived 不是自动定罪？</p>
+  <ul>
+    <li>变异可能与原程序语义等价，因此没有任何测试能够区分。</li>
+    <li>变异可能不属于该测试声称负责的行为。</li>
+    <li>错误可能被更高层测试捕获，而不是当前单元测试。</li>
+    <li>测试可能覆盖执行路径，却缺少能观察变化的断言。</li>
+  </ul>
+
+  <p>PIT 明确提醒存在等价变异；Microsoft 的实践文档也不建议追求 100% mutation score。<sup><a href="#source-3">3</a></sup><sup><a href="#source-4">4</a></sup></p>
+
+  <h2>给审计 Skill 的决策规则</h2>
+  <ol>
+    <li>先基于规格和风险定义该测试声称保护的行为。</li>
+    <li>静态追踪 expected 的来源，给出初步分类和置信度。</li>
+    <li>只有高价值且安全可变异的行为才执行 red proof。</li>
+    <li>把 survived 解释为“这个错误模型未被检测”，再调查原因。</li>
+    <li>仅当 expected 与 actual 存在循环依赖时，直接标记循环预言机。</li>
+  </ol>
+
+  <h2>快速检索练习</h2>
+  <p>先在脑中回答，再展开答案。</p>
+
+  <details>
+    <summary><code>expect(add(2, 3)).toBe(2 + 3)</code> 是严格同义反复吗？</summary>
+    <p>不是。它是镜像公式，存在共享需求解释的风险，但仍能杀死“加号变减号”等变异。</p>
+  </details>
+
+  <details>
+    <summary>某数据库回滚测试只断言 API 返回 500，足够吗？</summary>
+    <p>不足。它覆盖了错误响应，却没有验证事务回滚后的持久化状态、关联记录和后续读取，因此是覆盖范围与预言机强度问题，不一定是同义反复。</p>
+  </details>
+
+  <details>
+    <summary>一个变异 survived，能否直接删除该测试？</summary>
+    <p>不能。先判断变异是否等价、是否属于该测试职责，以及缺陷是无覆盖、弱断言、错误隔离，还是循环预言机。</p>
+  </details>
+
+  <p>下一步参考：<a href="../reference/test-audit-evidence-model.html">测试审计证据模型</a>。有任何一步不清楚，继续向教师提问，并用一个真实测试片段检验分类。</p>
+
+  <footer>
+    <p id="source-1">1. Barr et al., <a href="https://discovery.ucl.ac.uk/id/eprint/1471263/1/06963470.pdf">The Oracle Problem in Software Testing: A Survey</a>.</p>
+    <p id="source-2">2. Stryker, <a href="https://stryker-mutator.io/docs/mutation-testing-elements/mutant-states-and-metrics/">Mutant states and metrics</a>.</p>
+    <p id="source-3">3. PIT, <a href="https://pitest.org/quickstart/basic_concepts/">Basic concepts</a>.</p>
+    <p id="source-4">4. Microsoft Learn, <a href="https://learn.microsoft.com/en-us/dotnet/core/testing/mutation-testing">Mutation testing</a>.</p>
+  </footer>
+</main>
+</body>
+</html>
+

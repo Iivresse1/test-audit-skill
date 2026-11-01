@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>测试审计证据模型</title>
+  <link rel="stylesheet" href="../assets/lesson.css">
+</head>
+<body>
+<main>
+  <h1>测试审计证据模型</h1>
+  <p class="lede">先审计“有没有覆盖重要风险”，再审计“已有测试能不能证明它声称证明的事情”。</p>
+
+  <h2>两个正交维度</h2>
+  <table>
+    <thead>
+      <tr><th>维度</th><th>核心问题</th><th>典型证据</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>覆盖充分性</td><td>重要需求、风险和失败模式是否被测试？</td><td>需求追踪矩阵、风险清单、状态转换、边界和故障场景</td></tr>
+      <tr><td>测试可信度</td><td>已有测试是否使用独立且有判别力的预言机？</td><td>预言机来源、断言数据流、失败注入、变异结果</td></tr>
+    </tbody>
+  </table>
+
+  <div class="key">
+    数据库回滚失败属于待覆盖的风险场景；测试只检查内存对象、不检查提交后的数据库状态，则属于测试可信度缺陷。两者可以同时存在。
+  </div>
+
+  <h2>测试缺陷分类</h2>
+  <table>
+    <thead>
+      <tr><th>分类</th><th>判断线索</th><th>首选结论</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>循环预言机</td><td>expected 直接或间接来自同一次被测计算</td><td>高置信度错误</td></tr>
+      <tr><td>相关或镜像预言机</td><td>测试独立重写了同一算法或解释</td><td>相关性风险，不自动判错</td></tr>
+      <tr><td>Mock 自证</td><td>断言只能证明 mock 返回了配置值</td><td>通常缺少系统行为证据</td></tr>
+      <tr><td>弱预言机</td><td>只检查非空、类型、不抛异常或调用发生</td><td>说明未覆盖的错误类别</td></tr>
+      <tr><td>错误测试环境</td><td>替身、事务、时钟或并发模型与真实系统不一致</td><td>独立性或代表性无法确认</td></tr>
+      <tr><td>不稳定测试</td><td>结果受时间、顺序、共享状态或外部服务波动影响</td><td>可信度下降，但不等于同义反复</td></tr>
+    </tbody>
+  </table>
+
+  <h2>即使有规格，仍可能无法确认独立性</h2>
+  <ul>
+    <li>规格含糊、互相矛盾，或版本与代码不一致。</li>
+    <li>测试 fixture、expected 文件或代码生成器实际上由实现产出。</li>
+    <li>测试只验证规格的一部分，遗漏持久化、副作用或失败后的状态。</li>
+    <li>测试替身没有实现真实数据库、消息系统或第三方协议的关键语义。</li>
+    <li>并发、时间、随机性或环境状态使相同输入没有唯一确定输出。</li>
+    <li>测试作者误读规格；独立来源存在，但预言机编码错误。</li>
+    <li>规格本身错误；测试可以独立验证规格，却不能证明业务需求正确。</li>
+  </ul>
+
+  <p><a href="../lessons/0001-static-triage-and-red-proof.html">返回课程：静态初筛与 Red Proof</a></p>
+</main>
+</body>
+</html>
+
